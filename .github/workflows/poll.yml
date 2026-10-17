@@ -1,0 +1,24 @@
+name: poll
+on:
+  workflow_dispatch:
+    inputs:
+      runners: {description: "JSON list, one entry per parallel runner (distinct IPs)", default: "[1,2]"}
+      duration: {description: "seconds per runner", default: "20700"}
+      interval: {description: "seconds between reads per runner", default: "2"}
+      probe: {description: "1 = only report statuses", default: ""}
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        n: ${{ fromJSON(inputs.runners) }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 poll.py
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_DETECT_TOPIC }}
+          DURATION: ${{ inputs.duration }}
+          INTERVAL: ${{ inputs.interval }}
+          PROBE: ${{ inputs.probe }}
