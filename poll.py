@@ -47,7 +47,10 @@ while time.time() < end:
     else:
         refused_streak += 1
         print(time.strftime("%H:%M:%S"), "refused", st, raw[:80], flush=True)
-        if refused_streak >= 5 and not os.environ.get("PROBE"):
-            sys.exit(3)  # this runner's IP is blocked; the Mac re-dispatches for a fresh runner
+        if refused_streak >= 3 and not os.environ.get("PROBE"):
+            # This runner's IP is used up (datacenter IPs get a few dozen reads); the workflow
+            # dispatches a replacement job, which lands on a new VM with a new IP
+            print("codes", codes, flush=True)
+            sys.exit(0)
     time.sleep(max(0, interval * random.uniform(0.85, 1.15) - (time.time() - t)))
 print("codes", codes, flush=True)
