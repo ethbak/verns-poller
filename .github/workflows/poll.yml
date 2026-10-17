@@ -25,15 +25,16 @@ jobs:
           DURATION: ${{ inputs.duration }}
           INTERVAL: ${{ inputs.interval }}
           PROBE: ${{ inputs.probe }}
-      # Each chain replaces itself with a fresh job (new VM, new IP) until the stop flag is
-      # set or Monday's last seating has passed; capped so chains can never multiply
-      - if: always() && inputs.probe == ''
+      # Each chain replaces itself with a fresh job (new VM, new IP) until Monday's last
+      # seating has passed. The Mac watcher stops chains by disabling this workflow and
+      # cancelling runs; cancelled runs must not replace themselves. Capped so chains can
+      # never multiply.
+      - if: ${{ !cancelled() && inputs.probe == '' }}
         env:
           GH_TOKEN: ${{ github.token }}
-          STOP: ${{ vars.POLL_STOP }}
         run: |
           now=$(TZ=America/New_York date +%Y%m%d%H%M)
-          if [ "$STOP" = "1" ] || [ "$now" -ge 202610192145 ]; then echo "stopping chain"; exit 0; fi
+          if [ "$now" -ge 202610192145 ]; then echo "past Monday's last seating; stopping chain"; exit 0; fi
           live=$(gh run list -R "$GITHUB_REPOSITORY" -w poll.yml --json status \
             -q '[.[] | select(.status=="queued" or .status=="in_progress")] | length')
           if [ "$live" -gt 6 ]; then echo "$live runs live; not dispatching"; exit 0; fi
